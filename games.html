@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Library — Humble Bundle Collection</title>
+  <meta name="description" content="Browse your Humble Bundle Steam game collection with sorting and filtering.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    /* ── Reset & Base ─────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: #1a1f35;
+      --bg-card-hover: #222845;
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(139, 92, 246, 0.4);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #8b5cf6;
+      --accent-glow: rgba(139, 92, 246, 0.25);
+      --green: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --cyan: #06b6d4;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+      --shadow-card-hover: 0 8px 40px rgba(139, 92, 246, 0.15), 0 4px 24px rgba(0, 0, 0, 0.4);
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Background gradient ──────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 60%, rgba(6, 182, 212, 0.06), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ───────────────────────────────────────── */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Header ───────────────────────────────────────── */
+    header {
+      padding: 48px 0 32px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #f1f5f9 0%, #8b5cf6 50%, #06b6d4 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      font-weight: 400;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* ── Controls Bar ─────────────────────────────────── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      backdrop-filter: blur(12px);
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 14px 10px 40px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .sort-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .sort-btn {
+      padding: 9px 16px;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .sort-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+    }
+
+    .sort-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+
+    .sort-btn .arrow {
+      display: inline-block;
+      margin-left: 4px;
+      font-size: 0.7rem;
+      opacity: 0.7;
+    }
+
+    .results-count {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
+    /* ── Platform Toggles ─────────────────────────────── */
+    .platform-toggles {
+      display: flex;
+      gap: 8px;
+      margin-right: auto;
+    }
+
+    .platform-toggle {
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+
+    .platform-toggle::before {
+      content: '';
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      border: 1.5px solid var(--text-muted);
+      background: transparent;
+      transition: all var(--transition);
+    }
+
+    .platform-toggle:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .platform-toggle.active {
+      color: #fff;
+    }
+
+    .platform-toggle.active.steam {
+      border-color: #66c0f4;
+      background: rgba(102, 192, 244, 0.1);
+    }
+
+    .platform-toggle.active.steam::before {
+      background: #66c0f4;
+      border-color: #66c0f4;
+    }
+
+    .platform-toggle.active.origin {
+      border-color: #f44336;
+      background: rgba(244, 67, 54, 0.1);
+    }
+
+    .platform-toggle.active.origin::before {
+      background: #f44336;
+      border-color: #f44336;
+    }
+
+    .platform-toggle.active.gog {
+      border-color: #c900e3;
+      background: rgba(201, 0, 227, 0.1);
+    }
+
+    .platform-toggle.active.gog::before {
+      background: #c900e3;
+      border-color: #c900e3;
+    }
+
+    /* SVG checkmark for active state */
+    .platform-toggle.active::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+      background-size: 10px;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* ── Grid ─────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      padding-bottom: 80px;
+    }
+
+    /* ── Card ─────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: var(--shadow-card);
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-card-hover);
+      border-color: var(--border-hover);
+    }
+
+    .card:hover .card-poster img {
+      transform: scale(1.05);
+    }
+
+    .card-poster {
+      width: 100%;
+      aspect-ratio: 460 / 215;
+      overflow: hidden;
+      background: var(--bg-secondary);
+      position: relative;
+    }
+
+    .card-poster img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-poster .no-img {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: var(--text-muted);
+      font-size: 2rem;
+    }
+
+    /* Metascore badge on poster */
+    .metascore-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: #fff;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .metascore-badge.high {
+      background: rgba(16, 185, 129, 0.85);
+    }
+
+    .metascore-badge.mid {
+      background: rgba(245, 158, 11, 0.85);
+    }
+
+    .metascore-badge.low {
+      background: rgba(239, 68, 68, 0.85);
+    }
+
+    /* Expiration warning */
+    .expiration-tag {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .expiration-tag.soon {
+      background: rgba(239, 68, 68, 0.8);
+      color: #fff;
+    }
+
+    .expiration-tag.later {
+      background: rgba(245, 158, 11, 0.7);
+      color: #fff;
+    }
+
+    .card-body {
+      padding: 14px 16px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 8px;
+    }
+
+    .card-price {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .card-price.free {
+      color: var(--cyan);
+    }
+
+    .card-price.unknown {
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+    }
+
+    .card-bundle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .platform-badge {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .platform-badge.steam {
+      background: rgba(23, 26, 33, 0.85);
+      color: #66c0f4;
+    }
+
+    .platform-badge.origin {
+      background: rgba(244, 67, 54, 0.8);
+      color: #fff;
+    }
+
+    .platform-badge.gog {
+      background: rgba(201, 0, 227, 0.8);
+      color: #fff;
+    }
+
+    /* ── Empty state ──────────────────────────────────── */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
+
+    .empty-state p {
+      font-size: 1rem;
+    }
+
+    /* ── Card appear animation ────────────────────────── */
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card {
+      animation: cardIn 0.35s ease both;
+    }
+
+    /* stagger via JS with inline --i */
+    .card {
+      animation-delay: calc(var(--i, 0) * 25ms);
+    }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media (max-width: 640px) {
+      .controls {
+        flex-direction: column;
+      }
+
+      .search-box {
+        min-width: 100%;
+      }
+
+      .sort-group {
+        width: 100%;
+        justify-content: stretch;
+      }
+
+      .sort-btn {
+        flex: 1;
+        text-align: center;
+      }
+
+      .results-count {
+        margin-left: 0;
+        text-align: center;
+        width: 100%;
+      }
+
+      .grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 14px;
+      }
+
+      header {
+        padding: 32px 0 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>🎮 Game Library</h1>
+      <p>Humble Bundle Collection</p>
+      <div class="stats" id="stats"></div>
+    </header>
+
+    <div class="controls">
+      <div class="search-box">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search games..." autocomplete="off">
+      </div>
+      <div class="platform-toggles">
+        <button class="platform-toggle steam active" data-platform="steam">Steam</button>
+        <button class="platform-toggle origin active" data-platform="origin">Origin</button>
+        <button class="platform-toggle gog active" data-platform="gog">GOG</button>
+      </div>
+      <div class="sort-group">
+        <button class="sort-btn active" data-sort="name" id="sortName">Name <span class="arrow">▲</span></button>
+        <button class="sort-btn" data-sort="price" id="sortPrice">Price <span class="arrow">▼</span></button>
+        <button class="sort-btn" data-sort="metascore" id="sortMeta">Metascore <span class="arrow">▼</span></button>
+      </div>
+      <span class="results-count" id="resultsCount"></span>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script>
+    const GAMES = [
+      {
+        "game": "Yoku's Island Express",
+        "price": "$19.99",
+        "metascore": 84,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/334940/header.jpg?t=1763040310",
+        "steamUrl": "https://store.steampowered.com/app/334940/",
+        "bundle": "",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Archangel: Hellfire - Fully Loaded",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/553880/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Fall VR Bundle",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "A-Tech Cybernetic",
+        "price": "$14.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578210/header.jpg?t=1715712836",
+        "steamUrl": "https://store.steampowered.com/app/578210/",
+        "bundle": "Humble Fall VR Bundle",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "The Walking Dead: Saints & Sinners",
+        "price": "$19.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/916840/header.jpg?t=1744761535",
+        "steamUrl": "https://store.steampowered.com/app/916840/",
+        "bundle": "Humble Fall VR Bundle",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Smashbox Arena",
+        "price": "$0.00 (Free)",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/568790/header.jpg?t=1620138523",
+        "steamUrl": "https://store.steampowered.com/app/568790/",
+        "bundle": "Humble VR Bundle",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Chasm",
+        "price": "$19.99",
+        "metascore": 72,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/312200/header.jpg?t=1774640395",
+        "steamUrl": "https://store.steampowered.com/app/312200/",
+        "bundle": "December 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Fluffy Horde",
+        "price": "$9.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/777880/header.jpg?t=1693758712",
+        "steamUrl": "https://store.steampowered.com/app/777880/",
+        "bundle": "December 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "My Time at Portia",
+        "price": "$29.99",
+        "metascore": 73,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/666140/header.jpg?t=1773299649",
+        "steamUrl": "https://store.steampowered.com/app/666140/",
+        "bundle": "December 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Regular Human Basketball",
+        "price": "$4.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/661940/header.jpg?t=1776928422",
+        "steamUrl": "https://store.steampowered.com/app/661940/",
+        "bundle": "December 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Sword Legacy Omen",
+        "price": "$17.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/690140/header.jpg?t=1701836059",
+        "steamUrl": "https://store.steampowered.com/app/690140/",
+        "bundle": "December 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Yakuza Kiwami",
+        "price": "$1.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3717330/07bf98df23eb154febbf878a79ff02b915b6cc43/header.jpg?t=1768478720",
+        "steamUrl": "https://store.steampowered.com/app/3717330/",
+        "bundle": "December 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "The Adventure Pals",
+        "price": "$14.99",
+        "metascore": 78,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/396710/header.jpg?t=1726581654",
+        "steamUrl": "https://store.steampowered.com/app/396710/",
+        "bundle": "August 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Almost There: The Platformer",
+        "price": "$9.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/951940/header.jpg?t=1730751443",
+        "steamUrl": "https://store.steampowered.com/app/951940/",
+        "bundle": "August 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Rising Storm 2: Vietnam + 2 DLCs",
+        "price": "$24.99",
+        "metascore": 81,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/418460/header.jpg?t=1770920980",
+        "steamUrl": "https://store.steampowered.com/app/418460/",
+        "bundle": "August 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Swords and Soldiers 2 Shawarmageddon",
+        "price": "$9.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/703880/header.jpg?t=1715018131",
+        "steamUrl": "https://store.steampowered.com/app/703880/",
+        "bundle": "August 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "60 Parsecs!",
+        "price": "$9.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/646270/header.jpg?t=1763734838",
+        "steamUrl": "https://store.steampowered.com/app/646270/",
+        "bundle": "July 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Love is Dead",
+        "price": "$11.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/453910/header.jpg?t=1594762534",
+        "steamUrl": "https://store.steampowered.com/app/453910/",
+        "bundle": "July 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "NAIRI: Tower of Shirin",
+        "price": "$4.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/802450/header.jpg?t=1626442282",
+        "steamUrl": "https://store.steampowered.com/app/802450/",
+        "bundle": "July 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Road Redemption",
+        "price": "$2.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/300380/header.jpg?t=1764612541",
+        "steamUrl": "https://store.steampowered.com/app/300380/",
+        "bundle": "July 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Warhammer 40,000: Mechanicus",
+        "price": "$29.99",
+        "metascore": 78,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/673880/header.jpg?t=1747933345",
+        "steamUrl": "https://store.steampowered.com/app/673880/",
+        "bundle": "July 2019 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Diaries of a Spaceport Janitor",
+        "price": "$9.99",
+        "metascore": 69,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/436500/header.jpg?t=1692115240",
+        "steamUrl": "https://store.steampowered.com/app/436500/",
+        "bundle": "Humble tinyBuild Bundle with Graveyard Keeper",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "The Final Station",
+        "price": "$14.99",
+        "metascore": 76,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/435530/header.jpg?t=1752529763",
+        "steamUrl": "https://store.steampowered.com/app/435530/",
+        "bundle": "Humble tinyBuild Bundle with Graveyard Keeper",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Punch Club",
+        "price": "$9.99",
+        "metascore": 73,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/394310/header.jpg?t=1775826361",
+        "steamUrl": "https://store.steampowered.com/app/394310/",
+        "bundle": "Humble tinyBuild Bundle with Graveyard Keeper",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "SpeedRunners",
+        "price": "$14.99",
+        "metascore": 84,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/207140/header.jpg?t=1777391860",
+        "steamUrl": "https://store.steampowered.com/app/207140/",
+        "bundle": "Humble tinyBuild Bundle with Graveyard Keeper",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Blackwake",
+        "price": "$0.00 (Free)",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/420290/header.jpg?t=1709060640",
+        "steamUrl": "https://store.steampowered.com/app/420290/",
+        "bundle": "July 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Forts",
+        "price": "$14.99",
+        "metascore": 74,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/410900/header.jpg?t=1777593336",
+        "steamUrl": "https://store.steampowered.com/app/410900/",
+        "bundle": "July 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Hearts of Iron IV",
+        "price": "$14.99",
+        "metascore": 83,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/394360/67bbd0057627fc2244793bcdd09260c2539499cf/header.jpg?t=1777568442",
+        "steamUrl": "https://store.steampowered.com/app/394360/",
+        "bundle": "July 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Interplanetary: Enhanced Edition",
+        "price": "$14.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/650220/header.jpg?t=1769765852",
+        "steamUrl": "https://store.steampowered.com/app/650220/",
+        "bundle": "July 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Portal Knights",
+        "price": "$19.99",
+        "metascore": 72,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/374040/header.jpg?t=1696604379",
+        "steamUrl": "https://store.steampowered.com/app/374040/",
+        "bundle": "July 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Serial Cleaner",
+        "price": "$2.99",
+        "metascore": 64,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/522210/b29986d041d02ec7dccb39713e6416c7d38ca2f8/header.jpg?t=1749737711",
+        "steamUrl": "https://store.steampowered.com/app/522210/",
+        "bundle": "July 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Shiness: The Lightning Kingdom",
+        "price": "$9.99",
+        "metascore": 68,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/366640/header.jpg?t=1728650401",
+        "steamUrl": "https://store.steampowered.com/app/366640/",
+        "bundle": "July 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Titan Quest: Anniversary Edition + Titan Quest: Ragnarok DLC",
+        "price": "$3.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/475150/header.jpg?t=1725002025",
+        "steamUrl": "https://store.steampowered.com/app/475150/",
+        "bundle": "July 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Acceleration of SUGURI 2",
+        "price": "$8.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/390710/header.jpg?t=1773470717",
+        "steamUrl": "https://store.steampowered.com/app/390710/",
+        "bundle": "June 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Bear With Me - Collector's Edition",
+        "price": "$4.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/809260/header.jpg?t=1718622860",
+        "steamUrl": "https://store.steampowered.com/app/809260/",
+        "bundle": "June 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Ken Follett's The Pillars of the Earth",
+        "price": "$19.99",
+        "metascore": 78,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/234270/header.jpg?t=1777462547",
+        "steamUrl": "https://store.steampowered.com/app/234270/",
+        "bundle": "June 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Styx: Shards of Darkness",
+        "price": "$1.99",
+        "metascore": 72,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/355790/header.jpg?t=1778174587",
+        "steamUrl": "https://store.steampowered.com/app/355790/",
+        "bundle": "June 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Yooka-Laylee",
+        "price": "$19.99",
+        "metascore": 73,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/360830/e813fdd4b8d4acd419826b321d6a4e82578901ac/header.jpg?t=1763031099",
+        "steamUrl": "https://store.steampowered.com/app/360830/",
+        "bundle": "June 2018 Humble Monthly",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Full Throttle Remastered",
+        "price": "$14.99",
+        "metascore": 77,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/228360/header.jpg?t=1731602282",
+        "steamUrl": "https://store.steampowered.com/app/228360/",
+        "bundle": "Humble Day of the Devs Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Grim Fandango Remastered",
+        "price": "$14.99",
+        "metascore": 84,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/316790/header.jpg?t=1731602112",
+        "steamUrl": "https://store.steampowered.com/app/316790/",
+        "bundle": "Humble Day of the Devs Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Loot Rascals Soundtrack",
+        "price": "$6.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/583670/header.jpg?t=1643795817",
+        "steamUrl": "https://store.steampowered.com/app/583670/",
+        "bundle": "Humble Day of the Devs Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Bone: Out From Boneville",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/8310/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Telltale Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Hector: Badge of Carnage",
+        "price": "$14.99",
+        "metascore": 75,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/94620/header.jpg?t=1686748461",
+        "steamUrl": "https://store.steampowered.com/app/94620/",
+        "bundle": "Humble Telltale Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Poker Night at the Inventory",
+        "price": "$9.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3897800/07bb60dab716568fdc7c8643b2bc8303d9d11d16/header.jpg?t=1774119583",
+        "steamUrl": "https://store.steampowered.com/app/3897800/",
+        "bundle": "Humble Telltale Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Puzzle Agent",
+        "price": "$4.99",
+        "metascore": 70,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/31270/header.jpg?t=1686674900",
+        "steamUrl": "https://store.steampowered.com/app/31270/",
+        "bundle": "Humble Telltale Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Puzzle Agent 2",
+        "price": "$4.99",
+        "metascore": 63,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/94590/header.jpg?t=1686675497",
+        "steamUrl": "https://store.steampowered.com/app/94590/",
+        "bundle": "Humble Telltale Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Sam & Max Save the World",
+        "price": "$19.99",
+        "metascore": 82,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1440440/ab10594227eeccb781407e8112752197f3756455/header.jpg?t=1744441844",
+        "steamUrl": "https://store.steampowered.com/app/1440440/",
+        "bundle": "Humble Telltale Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Sam & Max: Season 2",
+        "price": "$0.00 (Free)",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1909350/header.jpg?t=1723423493",
+        "steamUrl": "https://store.steampowered.com/app/1909350/",
+        "bundle": "Humble Telltale Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Telltale Texas Hold'em",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/8330/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Telltale Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "The Walking Dead",
+        "price": "$14.99",
+        "metascore": 82,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/207610/header.jpg?t=1729702559",
+        "steamUrl": "https://store.steampowered.com/app/207610/",
+        "bundle": "Humble Telltale Bundle 2017",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Else Heart.Break()",
+        "price": "$24.99",
+        "metascore": 79,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/400110/header.jpg?t=1610473048",
+        "steamUrl": "https://store.steampowered.com/app/400110/",
+        "bundle": "Humble Bundle's: Best of 2016",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Evoland 2",
+        "price": "$19.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/359310/header.jpg?t=1737537707",
+        "steamUrl": "https://store.steampowered.com/app/359310/",
+        "bundle": "Humble Bundle's: Best of 2016",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Victor Vran",
+        "price": "$19.99",
+        "metascore": 75,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/345180/header.jpg?t=1667211282",
+        "steamUrl": "https://store.steampowered.com/app/345180/",
+        "bundle": "Humble Bundle's: Best of 2016",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Bionic Commando: Rearmed",
+        "price": "$9.99",
+        "metascore": 86,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/21680/header.jpg?t=1644282960",
+        "steamUrl": "https://store.steampowered.com/app/21680/",
+        "bundle": "Humble Capcom Super Turbo HD Remix Rebundle!",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Lost Planet 3",
+        "price": "$24.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/226720/header.jpg?t=1644283090",
+        "steamUrl": "https://store.steampowered.com/app/226720/",
+        "bundle": "Humble Capcom Super Turbo HD Remix Rebundle!",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Resident Evil Revelations 2",
+        "price": "$19.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/287290/header.jpg?t=1769125412",
+        "steamUrl": "https://store.steampowered.com/app/287290/",
+        "bundle": "Humble Capcom Super Turbo HD Remix Rebundle!",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "STRIDER™",
+        "price": "$14.99",
+        "metascore": 78,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/235210/header.jpg?t=1712193426",
+        "steamUrl": "https://store.steampowered.com/app/235210/",
+        "bundle": "Humble Capcom Super Turbo HD Remix Rebundle!",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Magicka 2",
+        "price": "$14.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/238370/header.jpg?t=1709831158",
+        "steamUrl": "https://store.steampowered.com/app/238370/",
+        "bundle": "Humble Jumbo Bundle 6",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "TransOcean The Shipping Company",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/289930/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Jumbo Bundle 6",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Outlast",
+        "price": "$14.99",
+        "metascore": 80,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/238320/header.jpg?t=1666817106",
+        "steamUrl": "https://store.steampowered.com/app/238320/",
+        "bundle": "Humble Indie Bundle 16",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Remember Me",
+        "price": "$29.99",
+        "metascore": 65,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/228300/header.jpg?t=1644283394",
+        "steamUrl": "https://store.steampowered.com/app/228300/",
+        "bundle": "Remember Me™ Complete Pack",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Murdered: Soul Suspect",
+        "price": "$19.99",
+        "metascore": 59,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/233290/header.jpg?t=1774589635",
+        "steamUrl": "https://store.steampowered.com/app/233290/",
+        "bundle": "Humble Square Enix Bundle 3",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Abyss Odyssey",
+        "price": "$4.49",
+        "metascore": 69,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/255070/header.jpg?t=1603132080",
+        "steamUrl": "https://store.steampowered.com/app/255070/",
+        "bundle": "Humble Jumbo Bundle 5",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Abyss Odyssey",
+        "price": "$4.49",
+        "metascore": 69,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/255070/header.jpg?t=1603132080",
+        "steamUrl": "https://store.steampowered.com/app/255070/",
+        "bundle": "Humble Jumbo Bundle 5",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Insurgency",
+        "price": "$14.99",
+        "metascore": 74,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/222880/header.jpg?t=1758742858",
+        "steamUrl": "https://store.steampowered.com/app/222880/",
+        "bundle": "Humble Jumbo Bundle 5",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Men of War: Assault Squad GOTY",
+        "price": "$0.00 (Free)",
+        "metascore": 77,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/207770/header.jpg?t=1447355436",
+        "steamUrl": "https://store.steampowered.com/app/207770/",
+        "bundle": "Humble Jumbo Bundle 5",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Trine 2: Complete Story",
+        "price": "$19.99",
+        "metascore": 84,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/35720/header.jpg?t=1725007729",
+        "steamUrl": "https://store.steampowered.com/app/35720/",
+        "bundle": "Humble Weekly Bundle: Leading Ladies 2",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Cook, Serve, Delicious!",
+        "price": "$12.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/247020/header.jpg?t=1757022294",
+        "steamUrl": "https://store.steampowered.com/app/247020/",
+        "bundle": "Humble Weekly Bundle: ARGGGHHH!! These games are hard.",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Supreme Commander 2",
+        "price": "$12.99",
+        "metascore": 77,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/40100/header.jpg?t=1636731871",
+        "steamUrl": "https://store.steampowered.com/app/40100/",
+        "bundle": "Humble Square Enix Bundle 2",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Dust: An Elysian Tail",
+        "price": "$14.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/236090/header.jpg?t=1667838728",
+        "steamUrl": "https://store.steampowered.com/app/236090/",
+        "bundle": "Humble Weekly Bundle: Eye Candy 2",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Tower of Guns",
+        "price": "$14.99",
+        "metascore": 76,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/266110/header.jpg?t=1712009733",
+        "steamUrl": "https://store.steampowered.com/app/266110/",
+        "bundle": "Humble Indie Bundle 13",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Potatoman Seeks the Troof",
+        "price": "$3.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/328500/header.jpg?t=1588696190",
+        "steamUrl": "https://store.steampowered.com/app/328500/",
+        "bundle": "Humble Flash Bundle: Extra Life",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "The Bridge",
+        "price": "$9.99",
+        "metascore": 74,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/204240/header.jpg?t=1764465530",
+        "steamUrl": "https://store.steampowered.com/app/204240/",
+        "bundle": "Humble Indie Bundle 12",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Monaco: What's Yours Is Mine",
+        "price": "$14.99",
+        "metascore": 83,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/113020/header.jpg?t=1773702447",
+        "steamUrl": "https://store.steampowered.com/app/113020/",
+        "bundle": "Humble Indie Bundle 12",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Crusader Kings II - African Unit Pack",
+        "price": "$1.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/210892/header.jpg?t=1700497997",
+        "steamUrl": "https://store.steampowered.com/app/210892/",
+        "bundle": "Humble Jumbo Bundle 2",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Crusader Kings II - Norse Unit Pack",
+        "price": "$1.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/210905/header.jpg?t=1700497816",
+        "steamUrl": "https://store.steampowered.com/app/210905/",
+        "bundle": "Humble Jumbo Bundle 2",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Crusader Kings II - Russian Unit Pack",
+        "price": "$1.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/210899/header.jpg?t=1700497980",
+        "steamUrl": "https://store.steampowered.com/app/210899/",
+        "bundle": "Humble Jumbo Bundle 2",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Orcs Must Die! 2",
+        "price": "$14.99",
+        "metascore": 83,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/201790/header.jpg?t=1725042613",
+        "steamUrl": "https://store.steampowered.com/app/201790/",
+        "bundle": "Humble Jumbo Bundle 2",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "PixelJunk Eden",
+        "price": "$9.99",
+        "metascore": 81,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/105800/header.jpg?t=1746671505",
+        "steamUrl": "https://store.steampowered.com/app/105800/",
+        "bundle": "Humble Jumbo Bundle 2",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "140",
+        "price": "$4.99",
+        "metascore": 80,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242820/header.jpg?t=1632130187",
+        "steamUrl": "https://store.steampowered.com/app/242820/",
+        "bundle": "Humble Flash Bundle: Rhythm",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Electronic Super Joy: Groove City",
+        "price": "$4.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/301460/header.jpg?t=1447361872",
+        "steamUrl": "https://store.steampowered.com/app/301460/",
+        "bundle": "Humble Flash Bundle: Rhythm",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Electronic Super Joy: Groove City",
+        "price": "$4.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/301460/header.jpg?t=1447361872",
+        "steamUrl": "https://store.steampowered.com/app/301460/",
+        "bundle": "Humble Flash Bundle: Rhythm",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Thief Gold",
+        "price": "$6.99",
+        "metascore": 92,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/211600/header.jpg?t=1764279039",
+        "steamUrl": "https://store.steampowered.com/app/211600/",
+        "bundle": "Humble Square Enix Bundle",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Galaxy on Fire 2™ Full HD",
+        "price": "$7.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/212010/header.jpg?t=1447355835",
+        "steamUrl": "https://store.steampowered.com/app/212010/",
+        "bundle": "Humble Weekly Bundle: German Edition",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "BIT.TRIP RUNNER",
+        "price": "$9.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/63710/header.jpg?t=1700025629",
+        "steamUrl": "https://store.steampowered.com/app/63710/",
+        "bundle": "Humble Platforming Weekly Bundle",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Planet Stronghold",
+        "price": "$18.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/291050/header.jpg?t=1727724231",
+        "steamUrl": "https://store.steampowered.com/app/291050/",
+        "bundle": "Humble Weekly Sale: Celebrating Open Source",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Planet Stronghold DLC Key",
+        "price": "$18.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/291050/header.jpg?t=1727724231",
+        "steamUrl": "https://store.steampowered.com/app/291050/",
+        "bundle": "Humble Weekly Sale: Celebrating Open Source",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "FEZ",
+        "price": "$9.99",
+        "metascore": 91,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/224760/header.jpg?t=1572375251",
+        "steamUrl": "https://store.steampowered.com/app/224760/",
+        "bundle": "Humble Indie Bundle 11",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Fish Fillets 2",
+        "price": "$4.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/33950/header.jpg?t=1748944451",
+        "steamUrl": "https://store.steampowered.com/app/33950/",
+        "bundle": "Humble Weekly Sale: Bohemia Interactive",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Samorost 2",
+        "price": "$4.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/40720/b37b26cb266968bf0459a710704214e5c893cfdd/header.jpg?t=1773172966",
+        "steamUrl": "https://store.steampowered.com/app/40720/",
+        "bundle": "Humble Weekly Sale: Amanita & Friends",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Sanctum",
+        "price": "$9.99",
+        "metascore": 70,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/91600/header.jpg?t=1562514720",
+        "steamUrl": "https://store.steampowered.com/app/91600/",
+        "bundle": "Yogscast's Dwarven Dairy Drive",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "War of the Vikings",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/234530/header.jpg",
+        "steamUrl": null,
+        "bundle": "Yogscast's Dwarven Dairy Drive",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Little Inferno",
+        "price": "$14.99",
+        "metascore": 68,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/221260/header.jpg?t=1668741117",
+        "steamUrl": "https://store.steampowered.com/app/221260/",
+        "bundle": "Humble Bundle: PC and Android 8",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Serious Sam 3: BFE",
+        "price": "$29.99",
+        "metascore": 72,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/41070/header.jpg?t=1728688460",
+        "steamUrl": "https://store.steampowered.com/app/41070/",
+        "bundle": "Humble Jumbo Bundle",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "The Lord of the Rings Online",
+        "price": "$0.00 (Free)",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/212500/b6dccf6cbb5b453d09f337bd2e12b380e176bc30/header_alt_assets_6.jpg?t=1776971245",
+        "steamUrl": "https://store.steampowered.com/app/212500/",
+        "bundle": "Humble WB Games Bundle",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Broken Sword: Director's Cut",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/57640/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Bundle: PC and Android 7",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Ticket to Ride",
+        "price": "$14.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2477010/a9db2cae2cd0f315dfc3ad13c90916c6f8ca4ba8/header_alt_assets_7.jpg?t=1777541948",
+        "steamUrl": "https://store.steampowered.com/app/2477010/",
+        "bundle": "Humble Bundle: PC and Android 7",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Ticket to Ride - Europe",
+        "price": "$9.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2608220/header.jpg?t=1778151060",
+        "steamUrl": "https://store.steampowered.com/app/2608220/",
+        "bundle": "Humble Bundle: PC and Android 7",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Neighbours From Hell Compilation",
+        "price": null,
+        "metascore": 69,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/260750/header.jpg?t=1726050067",
+        "steamUrl": "https://store.steampowered.com/app/260750/",
+        "bundle": "Humble Weekly Sale: Nordic Games",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Eets Munchies Steam Key",
+        "price": "$6.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/214550/header.jpg?t=1701910949",
+        "steamUrl": "https://store.steampowered.com/app/214550/",
+        "bundle": "Humble Indie Bundle 9",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Thomas Was Alone",
+        "price": "$4.99",
+        "metascore": 77,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/220780/header.jpg?t=1758896562",
+        "steamUrl": "https://store.steampowered.com/app/220780/",
+        "bundle": "Humble Weekly Sale: Hosted by PewDiePie",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Organ Trail: Director's Cut Steam key",
+        "price": "$4.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/233740/header.jpg?t=1737497858",
+        "steamUrl": "https://store.steampowered.com/app/233740/",
+        "bundle": "Humble Bundle with Android 6",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Awesomenauts",
+        "price": "$19.99",
+        "metascore": 78,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/204300/f9e4fd882426cc2942ace7560492ad1d0e842ac6/header.jpg?t=1763057499",
+        "steamUrl": "https://store.steampowered.com/app/204300/",
+        "bundle": "Humble Indie Bundle 8",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Banishers: Ghost of New Eden",
+        "price": "$49.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1493640/header.jpg?t=1763044792",
+        "steamUrl": "https://store.steampowered.com/app/1493640/",
+        "bundle": "Humble Choice May 2025",
+        "expirationDate": "2026-09-02T17:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "My Time at Sandrock",
+        "price": "$39.99",
+        "metascore": 80,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1084600/header.jpg?t=1758092038",
+        "steamUrl": "https://store.steampowered.com/app/1084600/",
+        "bundle": "Humble Choice May 2025",
+        "expirationDate": "2026-09-02T17:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "Let's School!",
+        "price": "$19.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1937500/header.jpg?t=1753339721",
+        "steamUrl": "https://store.steampowered.com/app/1937500/",
+        "bundle": "Humble Choice May 2025",
+        "expirationDate": "2026-09-02T17:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "Lil Gator Game",
+        "price": "$19.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1586800/36b3e069a7a154328ff852dc3fff76cdc4f9ed6c/header.jpg?t=1772459218",
+        "steamUrl": "https://store.steampowered.com/app/1586800/",
+        "bundle": "Humble Choice May 2025",
+        "expirationDate": "2026-09-02T17:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "Wildmender",
+        "price": "$24.99",
+        "metascore": 78,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1599330/header.jpg?t=1754474668",
+        "steamUrl": "https://store.steampowered.com/app/1599330/",
+        "bundle": "Humble Choice May 2025",
+        "expirationDate": "2026-09-02T17:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "Warpips",
+        "price": "$16.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1291010/header.jpg?t=1770912777",
+        "steamUrl": "https://store.steampowered.com/app/1291010/",
+        "bundle": "Humble Choice May 2025",
+        "expirationDate": "2026-09-02T17:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "The Quarry",
+        "price": "$59.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1577120/header.jpg?t=1730303267",
+        "steamUrl": "https://store.steampowered.com/app/1577120/",
+        "bundle": "Humble Choice April 2025",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Metal Hellsinger",
+        "price": "$29.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1061910/header.jpg?t=1731933059",
+        "steamUrl": "https://store.steampowered.com/app/1061910/",
+        "bundle": "Humble Choice April 2025",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Dark Pictures Anthology: House of Ashes",
+        "price": "$29.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1281590/header.jpg?t=1728912876",
+        "steamUrl": "https://store.steampowered.com/app/1281590/",
+        "bundle": "Humble Choice April 2025",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Rebel Inc: Escalation",
+        "price": "$14.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1088790/ace8bbbb1a749a06d5a4a966011e3064f1ca21bb/header.jpg?t=1776849895",
+        "steamUrl": "https://store.steampowered.com/app/1088790/",
+        "bundle": "Humble Choice April 2025",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Spirit of the Island",
+        "price": "$14.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1592110/06b6fc557b1b7ba36b610e93a6d59e220634e0a5/header.jpg?t=1775475428",
+        "steamUrl": "https://store.steampowered.com/app/1592110/",
+        "bundle": "Humble Choice April 2025",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Lords and Villeins",
+        "price": "$24.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1287530/header.jpg?t=1761835995",
+        "steamUrl": "https://store.steampowered.com/app/1287530/",
+        "bundle": "Humble Choice April 2025",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "A Juggler's Tale",
+        "price": "$17.99",
+        "metascore": 74,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1252830/header.jpg?t=1776172830",
+        "steamUrl": "https://store.steampowered.com/app/1252830/",
+        "bundle": "Humble Choice April 2025",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Mr. Prepper",
+        "price": "$19.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/761830/500622b10e11a31f4d758c9761a4feb97a1affc0/header.jpg?t=1778143496",
+        "steamUrl": "https://store.steampowered.com/app/761830/",
+        "bundle": "Humble Choice April 2025",
+        "expirationDate": null,
+        "platform": "steam"
+      },
+      {
+        "game": "Assassin's Creed Valhalla",
+        "price": "$59.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2208920/header.jpg?t=1754572990",
+        "steamUrl": "https://store.steampowered.com/app/2208920/",
+        "bundle": "Humble Choice March 2025",
+        "expirationDate": "2026-11-06T18:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "Daemon X Machina: Titanic Scion",
+        "price": "$69.99",
+        "metascore": 79,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1342490/dc5fd7e61c483622ee093b53b1a0928e4ea90996/header.jpg?t=1775578386",
+        "steamUrl": "https://store.steampowered.com/app/1342490/",
+        "bundle": "Humble Choice February 2025",
+        "expirationDate": "2027-01-05T18:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "The Lord of the Rings: Return to Moria",
+        "price": "$29.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2933130/6b8f8cf6304969c5c1d72fb3b33e5a31a1255f83/header.jpg?t=1776449367",
+        "steamUrl": "https://store.steampowered.com/app/2933130/",
+        "bundle": "Humble Choice January 2025",
+        "expirationDate": "2027-05-05T17:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "Planet of Lana",
+        "price": "$19.99",
+        "metascore": 80,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1608230/afc987687f2f80c5c4a93293f2f0f53a62032212/header.jpg?t=1772728759",
+        "steamUrl": "https://store.steampowered.com/app/1608230/",
+        "bundle": "Humble Choice January 2025",
+        "expirationDate": "2027-05-05T17:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "Artisan TD",
+        "price": "$16.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2224640/header.jpg?t=1777362000",
+        "steamUrl": "https://store.steampowered.com/app/2224640/",
+        "bundle": "Humble Choice December 2024",
+        "expirationDate": "2026-11-05T18:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "The Procession to Calvary",
+        "price": "$9.99",
+        "metascore": 78,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1071130/header.jpg?t=1774549724",
+        "steamUrl": "https://store.steampowered.com/app/1071130/",
+        "bundle": "Humble Choice November 2024",
+        "expirationDate": "2027-05-05T17:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "Buddy Simulator 1984",
+        "price": "$9.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1269950/6565c6ce539591aa5a95c005b95bb525b11007a9/header.jpg?t=1747255411",
+        "steamUrl": "https://store.steampowered.com/app/1269950/",
+        "bundle": "Humble Choice November 2024",
+        "expirationDate": "2027-05-05T17:00:00Z",
+        "platform": "steam"
+      },
+      {
+        "game": "Burnout Paradise: The Ultimate Box",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/24740/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Origin Bundle",
+        "expirationDate": null,
+        "platform": "origin"
+      },
+      {
+        "game": "Command & Conquer: Red Alert 3 - Uprising",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/24800/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Origin Bundle",
+        "expirationDate": null,
+        "platform": "origin"
+      },
+      {
+        "game": "Crysis 2 Maximum Edition",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/108800/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Origin Bundle",
+        "expirationDate": null,
+        "platform": "origin"
+      },
+      {
+        "game": "Medal of Honor",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/47790/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Origin Bundle",
+        "expirationDate": null,
+        "platform": "origin"
+      },
+      {
+        "game": "Mirror's Edge",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/17410/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Origin Bundle",
+        "expirationDate": null,
+        "platform": "origin"
+      },
+      {
+        "game": "Populous",
+        "price": null,
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/47870/header.jpg",
+        "steamUrl": null,
+        "bundle": "Humble Origin Bundle",
+        "expirationDate": null,
+        "platform": "origin"
+      },
+      {
+        "game": "Pinball Spire",
+        "price": "$14.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2601940/header.jpg?t=1771278708",
+        "steamUrl": "https://store.steampowered.com/app/2601940/",
+        "bundle": "Unknown",
+        "expirationDate": null,
+        "platform": "gog"
+      },
+      {
+        "game": "Mafia II: Definitive Edition",
+        "price": "$29.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1030830/header.jpg?t=1759852951",
+        "steamUrl": "https://store.steampowered.com/app/1030830/",
+        "bundle": "Unknown",
+        "expirationDate": null,
+        "platform": "gog"
+      },
+      {
+        "game": "Fruitbus",
+        "price": "$14.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2484130/header.jpg?t=1774944219",
+        "steamUrl": "https://store.steampowered.com/app/2484130/",
+        "bundle": "Unknown",
+        "expirationDate": null,
+        "platform": "gog"
+      },
+      {
+        "game": "Neo Cab",
+        "price": "$14.99",
+        "metascore": 76,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/794540/49a19a9728c31c147540151a06e5f1398d29f776/header.jpg?t=1757056423",
+        "steamUrl": "https://store.steampowered.com/app/794540/",
+        "bundle": "Unknown",
+        "expirationDate": null,
+        "platform": "gog"
+      },
+      {
+        "game": "Fantasy General",
+        "price": "$5.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1741120/header.jpg?t=1728487091",
+        "steamUrl": "https://store.steampowered.com/app/1741120/",
+        "bundle": "Unknown",
+        "expirationDate": null,
+        "platform": "gog"
+      },
+      {
+        "game": "King of Retail",
+        "price": "$25.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/968250/header.jpg?t=1772458542",
+        "steamUrl": "https://store.steampowered.com/app/968250/",
+        "bundle": "Unknown",
+        "expirationDate": null,
+        "platform": "gog"
+      },
+      {
+        "game": "The Pale Beyond",
+        "price": "$19.99",
+        "metascore": 77,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1266030/8bda823c98bacea1044dcd0c480aeb65c22a026d/header.jpg?t=1767787380",
+        "steamUrl": "https://store.steampowered.com/app/1266030/",
+        "bundle": "Unknown",
+        "expirationDate": null,
+        "platform": "gog"
+      },
+      {
+        "game": "Snake Core",
+        "price": "$4.99",
+        "metascore": null,
+        "poster": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1262770/header.jpg?t=1772456442",
+        "steamUrl": "https://store.steampowered.com/app/1262770/",
+        "bundle": "Unknown",
+        "expirationDate": null,
+        "platform": "gog"
+      }
+    ];
+
+    // ── Parse price to number ──────────────────────────
+    function parsePrice(p) {
+      if (!p) return null;
+      if (p.includes("Free")) return 0;
+      const m = p.match(/[\d.]+/);
+      return m ? parseFloat(m[0]) : null;
+    }
+
+    // ── State ──────────────────────────────────────────
+    let currentSort = "name";
+    let sortAsc = { name: true, price: false, metascore: false };
+    let searchTerm = "";
+    const activePlatforms = new Set(["steam", "origin", "gog"]);
+
+    // ── Stats ──────────────────────────────────────────
+    function renderStats() {
+      const total = GAMES.length;
+      const withMeta = GAMES.filter(g => g.metascore != null).length;
+      const avgMeta = withMeta
+        ? Math.round(GAMES.filter(g => g.metascore != null).reduce((s, g) => s + g.metascore, 0) / withMeta)
+        : 0;
+      const totalValue = GAMES
+        .map(g => parsePrice(g.price))
+        .filter(p => p != null)
+        .reduce((s, p) => s + p, 0);
+
+      document.getElementById("stats").innerHTML = `
+        <div class="stat"><span class="stat-value">${total}</span><span class="stat-label">Games</span></div>
+        <div class="stat"><span class="stat-value">${avgMeta}</span><span class="stat-label">Avg Metascore</span></div>
+        <div class="stat"><span class="stat-value">$${totalValue.toFixed(0)}</span><span class="stat-label">Total Value</span></div>
+      `;
+    }
+
+    // ── Sort & Filter ──────────────────────────────────
+    function getFilteredSorted() {
+      let list = [...GAMES];
+
+      // Filter by platform
+      list = list.filter(g => activePlatforms.has(g.platform));
+
+      // Filter by search term
+      if (searchTerm) {
+        const q = searchTerm.toLowerCase();
+        list = list.filter(g =>
+          g.game.toLowerCase().includes(q) ||
+          (g.bundle && g.bundle.toLowerCase().includes(q))
+        );
+      }
+
+      // Sort
+      const dir = sortAsc[currentSort] ? 1 : -1;
+      list.sort((a, b) => {
+        if (currentSort === "name") {
+          return dir * a.game.localeCompare(b.game);
+        }
+        if (currentSort === "price") {
+          const pa = parsePrice(a.price);
+          const pb = parsePrice(b.price);
+          if (pa == null && pb == null) return 0;
+          if (pa == null) return 1;
+          if (pb == null) return -1;
+          return dir * (pa - pb);
+        }
+        if (currentSort === "metascore") {
+          const ma = a.metascore ?? -1;
+          const mb = b.metascore ?? -1;
+          if (ma === -1 && mb === -1) return 0;
+          if (ma === -1) return 1;
+          if (mb === -1) return -1;
+          return dir * (ma - mb);
+        }
+        return 0;
+      });
+
+      return list;
+    }
+
+    // ── Render Cards ───────────────────────────────────
+    function render() {
+      const list = getFilteredSorted();
+      const grid = document.getElementById("grid");
+
+      if (list.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            <p>No games match your search.</p>
+          </div>
+        `;
+        document.getElementById("resultsCount").textContent = "0 games";
+        return;
+      }
+
+      grid.innerHTML = list.map((g, i) => {
+        const priceNum = parsePrice(g.price);
+        const priceClass = g.price == null ? "unknown" : (priceNum === 0 ? "free" : "");
+        const priceLabel = g.price ?? "—";
+
+        let metaBadge = "";
+        if (g.metascore != null) {
+          const tier = g.metascore >= 75 ? "high" : g.metascore >= 50 ? "mid" : "low";
+          metaBadge = `<div class="metascore-badge ${tier}">${g.metascore}</div>`;
+        }
+
+        let expTag = "";
+        if (g.expirationDate) {
+          const exp = new Date(g.expirationDate);
+          const now = new Date();
+          const daysLeft = Math.ceil((exp - now) / 86400000);
+          if (daysLeft <= 90) {
+            expTag = `<div class="expiration-tag soon">Expires in ${daysLeft}d</div>`;
+          } else if (daysLeft <= 365) {
+            expTag = `<div class="expiration-tag later">Expires ${exp.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</div>`;
+          }
+        }
+
+        const posterHtml = g.poster
+          ? `<img src="${g.poster}" alt="${g.game}" loading="lazy">`
+          : `<div class="no-img">🎮</div>`;
+
+        const platformBadge = `<div class="platform-badge ${g.platform}">${g.platform}</div>`;
+
+        const tag = g.steamUrl ? "a" : "div";
+        const href = g.steamUrl ? ` href="${g.steamUrl}" target="_blank" rel="noopener"` : "";
+
+        return `
+          <${tag} class="card" style="--i:${Math.min(i, 30)}"${href}>
+            <div class="card-poster">
+              ${posterHtml}
+              ${metaBadge}
+              ${expTag}
+              ${platformBadge}
+            </div>
+            <div class="card-body">
+              <div class="card-title">${g.game}</div>
+              <div class="card-bundle" title="${g.bundle || ''}">${g.bundle || ''}</div>
+              <div class="card-meta">
+                <span class="card-price ${priceClass}">${priceLabel}</span>
+              </div>
+            </div>
+          </${tag}>
+        `;
+      }).join("");
+
+      document.getElementById("resultsCount").textContent = `${list.length} game${list.length !== 1 ? "s" : ""}`;
+    }
+
+    // ── Events ─────────────────────────────────────────
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      searchTerm = e.target.value;
+      render();
+    });
+
+    document.querySelectorAll(".platform-toggle").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const p = btn.dataset.platform;
+        if (activePlatforms.has(p)) {
+          activePlatforms.delete(p);
+          btn.classList.remove("active");
+        } else {
+          activePlatforms.add(p);
+          btn.classList.add("active");
+        }
+        render();
+      });
+    });
+
+    document.querySelectorAll(".sort-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const sort = btn.dataset.sort;
+        if (currentSort === sort) {
+          sortAsc[sort] = !sortAsc[sort];
+        } else {
+          currentSort = sort;
+        }
+
+        // Update button states
+        document.querySelectorAll(".sort-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        // Update arrows
+        document.querySelectorAll(".sort-btn").forEach(b => {
+          const s = b.dataset.sort;
+          b.querySelector(".arrow").textContent = sortAsc[s] ? "▲" : "▼";
+        });
+
+        render();
+      });
+    });
+
+    // ── Init ───────────────────────────────────────────
+    renderStats();
+    render();
+  </script>
+</body>
+
+</html>
